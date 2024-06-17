@@ -1,53 +1,88 @@
 ﻿using DataExporter.Dtos;
-using Microsoft.EntityFrameworkCore;
-
+using DataExporter.Model;
+using DataExporter.Repositories;
 
 namespace DataExporter.Services
 {
-    public class PolicyService
+    public class PolicyService : IPolicyService
     {
-        private ExporterDbContext _dbContext;
+        private readonly IPolicyRepository _policyRepository;
 
-        public PolicyService(ExporterDbContext dbContext)
+        public PolicyService(IPolicyRepository policyRepository)
         {
-            _dbContext = dbContext;
-            _dbContext.Database.EnsureCreated();
+            _policyRepository = policyRepository;
         }
 
-        /// <summary>
-        /// Creates a new policy from the DTO.
-        /// </summary>
-        /// <param name="policy"></param>
-        /// <returns>Returns a ReadPolicyDto representing the new policy, if succeded. Returns null, otherwise.</returns>
-        public async Task<ReadPolicyDto?> CreatePolicyAsync(CreatePolicyDto createPolicyDto)
+        public async Task<ReadPolicyDto> CreatePolicyAsync(CreatePolicyDto createPolicyDto, CancellationToken cancellationToken)
         {
-            return await Task.FromResult(new ReadPolicyDto());
+            var newPolicy = new Policy
+            {
+                PolicyNumber = createPolicyDto.PolicyNumber,
+                Premium = createPolicyDto.Premium,
+                StartDate = createPolicyDto.StartDate,
+                Notes = createPolicyDto.Notes.Select(n => new Note
+                {
+                    Text = n.Content
+                }).ToList()
+            };
+
+            await _policyRepository.AddAsync(newPolicy, cancellationToken);
+            await _policyRepository.SaveChangesAsync(cancellationToken);
+
+            var policyDto = new ReadPolicyDto
+            {
+                Id = newPolicy.Id,
+                PolicyNumber = newPolicy.PolicyNumber,
+                Premium = newPolicy.Premium,
+                StartDate = newPolicy.StartDate              
+            };
+
+            return policyDto;
         }
 
-        /// <summary>
-        /// Retrives all policies.
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns>Returns a list of ReadPoliciesDto.</returns>
-        public async Task<IList<ReadPolicyDto>> ReadPoliciesAsync()
+
+        public async Task<List<ExportDto>> ExportPoliciesAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
         {
-            return await Task.FromResult(new List<ReadPolicyDto>());
+            var policiesWithNotes = await _policyRepository.GetByDateRangeAsync(startDate, endDate, cancellationToken);
+
+            var exportDtos = policiesWithNotes.Select(p => new ExportDto
+            {
+                PolicyNumber = p.PolicyNumber,
+                Premium = p.Premium,
+                StartDate = p.StartDate,
+                Notes = p.Notes?.Select(n => n.Text).ToList()
+            }).ToList();
+
+            return exportDtos;
         }
 
-        /// <summary>
-        /// Retrieves a policy by id.
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns>Returns a ReadPolicyDto.</returns>
-        public async Task<ReadPolicyDto?> ReadPolicyAsync(int id)
+        public async Task<List<ReadPolicyDto>> GetAllPoliciesAsync(CancellationToken cancellationToken)
         {
-            var policy = await _dbContext.Policies.SingleAsync(x => x.Id == id);
+            var policies = await _policyRepository.GetAllAsync(cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var policyDtos = policies.Select(policy => new ReadPolicyDto
+            {
+                Id = policy.Id,
+                PolicyNumber = policy.PolicyNumber,
+                Premium = policy.Premium,
+                StartDate = policy.StartDate
+            }).ToList();
+
+            return policyDtos;
+        }
+
+        public async Task<ReadPolicyDto?> ReadPolicyAsync(int id, CancellationToken cancellationToken)
+        {
+            var policy = await _policyRepository.GetByIdAsync(id, cancellationToken);
+
             if (policy == null)
             {
                 return null;
             }
 
-            var policyDto = new ReadPolicyDto()
+            var policyDto = new ReadPolicyDto
             {
                 Id = policy.Id,
                 PolicyNumber = policy.PolicyNumber,
