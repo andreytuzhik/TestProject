@@ -1,0 +1,90 @@
+{
+	"info": {
+		"_postman_id": "967f536e-e97b-4725-8e92-1186d0bfd89d",
+		"name": "PoliciesController Collection",
+		"description": "Postman collection for PoliciesController",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "36355847"
+	},
+	"item": [
+		{
+			"name": "Create Policy",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"PolicyNumber\": \"P12345\",\n  \"Premium\": 150.0,\n  \"StartDate\": \"2024-01-01T00:00:00Z\"\n}"
+				},
+				"url": "{{baseUrl}}/Policies"
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Policies",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "{{baseUrl}}/Policies"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Policy by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/Policies/:policyId",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"Policies",
+						":policyId"
+					],
+					"variable": [
+						{
+							"key": "policyId",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Export Policies",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/Policies/export?startDate=2024-01-01&endDate=2024-12-31",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"Policies",
+						"export"
+					],
+					"query": [
+						{
+							"key": "startDate",
+							"value": "2024-01-01"
+						},
+						{
+							"key": "endDate",
+							"value": "2024-12-31"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
